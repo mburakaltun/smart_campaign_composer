@@ -1,0 +1,46 @@
+:root {
+  --bg: #f5f6fa; --card: #fff; --ink: #1d2433; --muted: #667085; --line: #e3e6ee;
+  --brand: #4f46e5; --brand-ink: #fff; --ok: #12a150; --busy: #3b82f6; --wait: #f59e0b; --bad: #dc2626; --skip: #9ca3af;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--ink);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); }
+main { max-width: 860px; margin: 0 auto; padding: 24px 16px 80px; display: grid; gap: 16px; }
+header { display: flex; align-items: center; justify-content: space-between; }
+h1 { font-size: 1.4rem; margin: 0; } h2 { font-size: 1.05rem; margin: 0 0 8px; } h3 { font-size: .95rem; margin: 16px 0 8px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+.card.brief p { margin: 4px 0 0; }
+.muted { color: var(--muted); } .small { font-size: .82rem; } .lead { font-size: 1.02rem; margin: 0 0 12px; }
+textarea, input { width: 100%; font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: inherit; resize: vertical; }
+textarea:focus, input:focus { outline: 2px solid var(--brand); outline-offset: 0; border-color: transparent; }
+textarea[readonly], input[readonly] { background: #fafbfc; }
+label { display: block; font-weight: 600; font-size: .88rem; margin: 12px 0 6px; }
+button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid transparent; padding: 9px 16px; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button.primary { background: var(--brand); color: var(--brand-ink); font-weight: 600; margin-top: 8px; }
+button.primary.danger { background: var(--bad); }
+button.secondary { background: #fff; border-color: var(--line); margin-top: 8px; }
+button.link { background: none; color: var(--brand); padding: 4px 0; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+.row > .primary, .row > .secondary { margin-top: 0; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; } @media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 8px 0; }
+.stat { background: var(--bg); border-radius: 10px; padding: 12px; display: grid; } .stat b { font-size: 1.6rem; } .stat span { color: var(--muted); font-size: .85rem; }
+.rule { background: var(--bg); padding: 12px; border-radius: 8px; overflow: auto; font-size: .85rem; }
+.counter { font-variant-numeric: tabular-nums; font-size: .82rem; color: var(--muted); margin-left: auto; }
+.counter.near { color: var(--wait); font-weight: 600; } .counter.over { color: var(--bad); font-weight: 700; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; } .chip { font-size: .75rem; padding: 3px 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 999px; }
+.error { color: var(--bad); } .problems { padding-left: 18px; }
+.notice { background: #fff7e6; border: 1px solid #ffd591; border-radius: 10px; padding: 10px 14px; margin: 0; }
+.live::after { content: '▍'; animation: blink 1s steps(2) infinite; } @keyframes blink { 50% { opacity: 0; } }
+.preview .sample { display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px; margin-bottom: 12px; } @media (max-width: 720px) { .preview .sample { grid-template-columns: 1fr; } }
+.sms-bubble { background: #e9f0ff; border-radius: 14px 14px 14px 2px; padding: 10px 12px; align-self: start; }
+.email-preview { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; } .email-preview pre { white-space: pre-wrap; font: inherit; margin: 6px 0 0; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; }
+.badge.live { background: #dbeafe; color: #1d4ed8; } .badge.done { background: #dcfce7; color: #166534; }
+.channel { margin: 14px 0; }
+.bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--bg); margin: 6px 0; }
+.seg { transition: width .4s; } .seg.ok, .dot.ok { background: var(--ok); } .seg.busy, .dot.busy { background: var(--busy); } .seg.wait, .dot.wait { background: var(--wait); }
+.seg.bad, .dot.bad { background: var(--bad); } .seg.skip, .dot.skip { background: var(--skip); }
+.legend { list-style: none; display: flex; gap: 14px; flex-wrap: wrap; padding: 0; margin: 4px 0; font-size: .85rem; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
