@@ -91,6 +91,10 @@ Kuyruğa yazarken yalnızca o **kanala** izin vermiş kullanıcılar seçilir (S
 * **Vue 3 + Vite**, bileşen başına tek sorumluluk; mantık (`limits.js`, `sse.js`) bileşenlerden ayrı test edilir.
 * Arayüz dili Türkçe (brief Türkçe, hedef kullanıcı Türk pazarlamacı).
 
+## 14. Model zorunlu araç seçimini desteklemezse
+
+Yapılandırılmış çıktı `tool_choice: {type: "tool"}` ile zorlanıyor. Gerçek API'ye karşı denemede kullanılan model bunu 400 ile reddetti. İstemci bu hatayı görünce bir kez `tool_choice: "auto"` ile yeniden dener ve system prompt'a "yalnızca bu aracı bir kez çağır" talimatını ekler; karar süreç boyunca hatırlanır (`atomic.Bool`), sonraki isteklerde ek tur olmaz. Güvenlik değişmez: model aracı çağırmazsa ya da geçersiz çıktı verirse mevcut doğrulama + onarım döngüsü (§2) devreye girer, çıktı yine whitelist'e karşı doğrulanır. Test: `TestAnthropicFallsBackToAutoToolChoice`.
+
 ## Yetiştirilemeyenler / sonraki adımlar
 
-Zamanlanmış gönderim, A/B varyantları, dile göre içerik, CI pipeline; GSM-7/UCS-2 SMS segment hesabı; paylaşımlı rate limiter; kimlik doğrulama; segment kuralının arayüzde düzenlenmesi; `go.sum`'ın commit edilmesi.
+Zamanlanmış gönderim, A/B varyantları, dile göre içerik, CI pipeline; GSM-7/UCS-2 SMS segment hesabı; paylaşımlı rate limiter; kimlik doğrulama; segment kuralının arayüzde düzenlenmesi.

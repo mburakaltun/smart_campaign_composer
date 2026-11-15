@@ -27,6 +27,8 @@ cp .env.example .env     # ANTHROPIC_API_KEY=... satırını doldur (.env commit
 docker compose up --build
 ```
 
+Hangi modda çalıştığını `docker compose logs api | grep LLM` gösterir: `LLM: Anthropic model=...` ya da `LLM: mock`. Mock modda aynı brief her seferinde aynı kuralı ve aynı metni üretir; bu beklenen davranıştır. Kitle sayıları ise iki modda da aynı kural için aynıdır (seed verisi sabit). `.env` değiştikten sonra `docker compose up -d --force-recreate api` gerekir.
+
 ### Demo akışı
 
 1. "Örnek brief'i kullan" → *Kitleyi çıkar*. Segment kuralı ve kaç kişiye gideceği (SMS/email izinli sayıları ayrı) görünür.
@@ -96,6 +98,10 @@ make test-integration   # Postgres gerektiren testler (docker compose db'sine ka
 * Segment kuralı arayüzde düzenlenemez (yalnızca yeniden üretilir); metin düzenlenebilir.
 * `go.sum` repoya henüz eklenmedi: ilk `docker compose up --build` / `make tidy` üretir, ardından commit edilmelidir.
 
-## Doğrulama durumu (dürüst not)
+## Doğrulama durumu
 
-Backend'in Postgres'e bağlı katmanı (`internal/store`) bu geliştirme ortamında derlenemedi (Go modül proxy'si kapalıydı); bu yüzden: (1) tüm SQL deyimleri gerçek bir PostgreSQL 16'ya karşı `PREPARE/EXECUTE` ile ayrıca denendi (tür çıkarımı, tutarlı kuyruk oluşturma, tekrar onayda `INSERT 0 0`, izin filtresi, claim ve stale kurtarma), (2) kalan her paket `go vet` + `go test -race` ile ve gerçek mock provider'a karşı uçtan uca çalıştırıldı. `internal/store` entegrasyon testleri ve `docker compose up` bütünü ilk kez kullanıcının makinesinde çalıştırıldı/çalıştırılacak: `make test` ve `make test-integration` ile doğrulayın.
+* `make test`: tüm Go ve frontend birim testleri geçiyor.
+* `make test-integration`: gerçek PostgreSQL'e karşı `internal/store` testleri geçiyor (claim'in aynı satırı iki kez vermemesi, çift onay, izin filtresi, stale kurtarma).
+* `docker compose up --build`: uçtan uca akış (brief → kitle → içerik → onay → gönderim → canlı durum) hem mock LLM ile hem gerçek Claude (`claude-sonnet-5-5`) ile çalıştırıldı.
+* Gönderim sonrası `make stats`: yaklaşık %5 enjekte 5xx, %3 429 ve %0,5 kayıp yanıta rağmen `max_deliveries_for_one_key = 1`. Yani hiçbir kişiye aynı mesaj iki kez ulaşmadı; kayıp yanıtların tekrarı provider tarafında idempotent replay olarak karşılandı.
+* Gerçek Claude ile denerken bulunan hata: model zorunlu `tool_choice` (`type: tool`) kabul etmedi (400). İstemci artık bu hatada bir kez `tool_choice: auto` + prompt talimatıyla yeniden deniyor (bkz. DECISIONS.md §14). Bu hata `httptest` sahtesiyle yakalanamazdı; gerçek API'ye karşı deneme bu yüzden ayrı bir adım olarak tutuldu.

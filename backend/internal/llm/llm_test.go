@@ -196,3 +196,33 @@ func TestAnthropicHTTPErrorSurfaces(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 }
+
+func TestAnthropicFallsBackToAutoToolChoice(t *testing.T) {
+	var choices []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			ToolChoice struct {
+				Type string `json:"type"`
+			} `json:"tool_choice"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		choices = append(choices, req.ToolChoice.Type)
+		if req.ToolChoice.Type == "tool" {
+			http.Error(w, `{"error":{"message":"tool_choice: type \"tool\" and \"any\" are not supported for this model."}}`, 400)
+			return
+		}
+		_, _ = w.Write([]byte(`{"content":[{"type":"tool_use","input":{"rule":{},"explanation":"x"}}]}`))
+	}))
+	defer srv.Close()
+	a := NewAnthropic("k", "m")
+	a.BaseURL = srv.URL
+	for i := 0; i < 2; i++ {
+		if _, err := a.GenerateSegment(context.Background(), SegmentInput{Brief: "b"}, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// 1st call: forced (rejected) then auto; 2nd call: auto straight away.
+	if got := strings.Join(choices, ","); got != "tool,auto,auto" {
+		t.Fatalf("tool_choice sequence = %s", got)
+	}
+}

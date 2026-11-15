@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -20,6 +21,11 @@ type Anthropic struct {
 	Model   string
 	BaseURL string // default https://api.anthropic.com
 	HTTP    *http.Client
+
+	// autoChoice is set once the API rejects a forced tool_choice for the
+	// model (some models only accept "auto"); from then on we send "auto" and
+	// instruct the model in the prompt to call the tool.
+	autoChoice atomic.Bool
 }
 
 func NewAnthropic(apiKey, model string) *Anthropic {
@@ -54,8 +60,7 @@ var messagesTool = map[string]any{
 }
 
 func (a *Anthropic) GenerateSegment(ctx context.Context, in SegmentInput, fb *Feedback) (json.RawMessage, error) {
-	body := a.request(SegmentSystemPrompt(in.Schema), SegmentUserPrompt(in.Brief, fb), segmentTool, false)
-	resp, err := a.do(ctx, body)
+	resp, err := a.send(ctx, SegmentSystemPrompt(in.Schema), SegmentUserPrompt(in.Brief, fb), segmentTool, false)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +83,7 @@ func (a *Anthropic) GenerateSegment(ctx context.Context, in SegmentInput, fb *Fe
 }
 
 func (a *Anthropic) GenerateMessages(ctx context.Context, in MessageInput, fb *Feedback, onDelta func(string)) (json.RawMessage, error) {
-	body := a.request(MessagesSystemPrompt(in.MaxLen), MessagesUserPrompt(in, fb), messagesTool, true)
-	resp, err := a.do(ctx, body)
+	resp, err := a.send(ctx, MessagesSystemPrompt(in.MaxLen), MessagesUserPrompt(in, fb), messagesTool, true)
 	if err != nil {
 		return nil, err
 	}
@@ -128,14 +132,30 @@ func (a *Anthropic) GenerateMessages(ctx context.Context, in MessageInput, fb *F
 	return json.RawMessage(acc.String()), nil
 }
 
+// send builds the request and falls back to tool_choice "auto" once if the
+// model does not support a forced tool.
+func (a *Anthropic) send(ctx context.Context, system, user string, tool map[string]any, stream bool) (*http.Response, error) {
+	resp, err := a.do(ctx, a.request(system, user, tool, stream))
+	if err != nil && !a.autoChoice.Load() && strings.Contains(err.Error(), "tool_choice") {
+		a.autoChoice.Store(true)
+		return a.do(ctx, a.request(system, user, tool, stream))
+	}
+	return resp, err
+}
+
 func (a *Anthropic) request(system, user string, tool map[string]any, stream bool) []byte {
+	choice := map[string]any{"type": "tool", "name": tool["name"]}
+	if a.autoChoice.Load() {
+		choice = map[string]any{"type": "auto"}
+		system += fmt.Sprintf("\n\nYou MUST answer by calling the %q tool exactly once. Do not write any plain text.", tool["name"])
+	}
 	b, _ := json.Marshal(map[string]any{
 		"model":       a.Model,
 		"max_tokens":  1500,
 		"stream":      stream,
 		"system":      system,
 		"tools":       []any{tool},
-		"tool_choice": map[string]any{"type": "tool", "name": tool["name"]},
+		"tool_choice": choice,
 		"messages":    []any{map[string]any{"role": "user", "content": user}},
 	})
 	return b

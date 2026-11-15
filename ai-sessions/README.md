@@ -9,4 +9,4 @@ Göndermeden önce API key'leri, e-posta/telefon gibi kişisel bilgileri ve `.en
 
 | Dosya | İçerik |
 |---|---|
-| _(buraya eklenecek)_ | |
+| `session-1.md` | Case'in tamamının yapıldığı claude.ai sohbetinin metin dökümü (kişisel bilgiler çıkarıldı; ayrıntı dosyanın başında) |
